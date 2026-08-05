@@ -1,20 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { AuthProvider, useAuth } from './src/shared/auth/AuthContext';
 import { SignInScreen } from './src/shared/auth/SignInScreen';
-
-function SignedInPlaceholder() {
-  const { user, signOut } = useAuth();
-  return (
-    <View style={styles.container}>
-      <Text>Signed in as {user?.email}</Text>
-      <Pressable style={styles.signOutButton} onPress={signOut}>
-        <Text style={styles.signOutText}>Sign Out</Text>
-      </Pressable>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+import { DogListScreen } from './src/features/swiping/DogListScreen';
 
 function Root() {
   const { session, loading } = useAuth();
@@ -27,7 +15,12 @@ function Root() {
     );
   }
 
-  return session ? <SignedInPlaceholder /> : <SignInScreen />;
+  return (
+    <>
+      {session ? <DogListScreen /> : <SignInScreen />}
+      <StatusBar style="auto" />
+    </>
+  );
 }
 
 export default function App() {
@@ -45,14 +38,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
-  },
-  signOutButton: {
-    backgroundColor: '#eee',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  signOutText: {
-    fontWeight: '600',
   },
 });

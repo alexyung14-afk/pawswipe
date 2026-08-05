@@ -75,7 +75,7 @@ flowchart TD
 ### V1 (build now)
 - Swipe interface (right = shortlist, left = pass)
 - Preference filters (breed, size, age, distance)
-- `DogRepository` abstraction pulling from multiple providers (Petfinder, RescueGroups.org, ShelterLuv, room for more)
+- `DogRepository` abstraction pulling from multiple providers (RescueGroups.org now; room for more later — see note below on Petfinder)
 - One-time adopter profile (housing, experience, household, references)
 - One-tap "Apply" that auto-fills a shelter's application from that profile
 - Application status tracking (submitted / no response yet / update)
@@ -94,16 +94,18 @@ flowchart TD
 ```mermaid
 flowchart LR
     U[User's Phone] -->|swipes, taps apply| App[Pawswipe App]
-    App --> DB[(Database — where profiles, shortlists, and applications get saved)]
-    App --> Repo[DogRepository — one door, many sources]
-    Repo --> PF[Petfinder Provider]
-    Repo --> RG[RescueGroups Provider]
-    Repo --> SL[ShelterLuv Provider]
+    App --> DB[(Database — where dogs, profiles, shortlists, and applications get saved)]
+    App --> Repo[DogRepository — reads cached dogs from the Database]
+    Sync[Scheduled sync job, runs every few hours] --> RG[RescueGroups Provider]
+    Sync --> SL[ShelterLuv Provider - V2, per-shelter pilots]
+    Sync --> DB
     App --> Auth[Sign-in — Google/Apple/Email]
     App -->|auto-filled application| Shelter[Shelter's own form/email]
 ```
 
-Data flow in plain words: user sets preferences → `DogRepository` asks each connected provider for matching dogs → app shows them as swipeable cards → right-swipe saves to the Database → tapping Apply pulls the saved adopter profile and fills out that specific shelter's form → submission and its status get logged in the Database so the user can track it.
+Data flow in plain words: a scheduled sync job (not the app itself) asks each connected provider for matching dogs every few hours and saves them into the Database → the app's `DogRepository` reads dogs straight from that Database, never live from a provider → app shows them as swipeable cards → right-swipe saves to the Database → tapping Apply pulls the saved adopter profile and fills out that specific shelter's form → submission and its status get logged in the Database so the user can track it.
+
+> **Provider note (added after V1 build started):** Petfinder shut down its public developer API on December 2, 2025, replacing it with a website-only embeddable widget that apps like this can't pull data from. RescueGroups.org is the V1 provider instead — same nationwide-aggregator shape as Petfinder was. ShelterLuv's API is per-shelter (each rescue grants its own key), so it fits better as a V2 direct-shelter-pilot integration than a V1 aggregator.
 
 ## 8. Tech Stack
 
@@ -112,7 +114,7 @@ Data flow in plain words: user sets preferences → `DogRepository` asks each co
 | React Native (via Expo) | Builds one app for iPhone and Android at once | Swiping is a phone-native gesture; a web app fights the interaction | Free |
 | Supabase (or Firebase) | Database — saves profiles, shortlists, applications | Managed, handles backups automatically, generous free tier | Free up to a few thousand users |
 | Google/Apple Sign-In | Lets people log in without a new password | Standard, low friction, official SDKs only | Free |
-| Petfinder / RescueGroups.org / ShelterLuv APIs | Supplies the dog listings | Official SDKs, swappable behind `DogRepository` so no single source is a single point of failure | Free (rate-limited) |
+| RescueGroups.org API (ShelterLuv later, per-shelter) | Supplies the dog listings | Official API, swappable behind `DogRepository` so no single source is a single point of failure | Free (rate-limited) |
 | Apple/Google In-App Purchase | Handles any future premium subscription | Required by app stores for digital features, no separate payment integration needed | Free to integrate, 15-30% cut on paid subscriptions |
 | Expo / Vercel (hosting) | Gets the app built and distributed | Standard for React Native, free tier well past launch | Free tier |
 
@@ -129,7 +131,7 @@ See [HOUSE-RULES.md](HOUSE-RULES.md).
 
 ## 11. Integrations
 
-- **Petfinder API, RescueGroups.org API, ShelterLuv API** — each behind a `Provider` implementation of a common `DogRepository` interface, so adding or dropping a source never touches app logic. Use each company's official SDK/API directly, no third-party wrapper.
+- **RescueGroups.org API** (V1), **ShelterLuv API** (V2, per-shelter) — each behind a `Provider` implementation of a common `DogRepository` interface, so adding or dropping a source never touches app logic. Use each company's official API directly, no third-party wrapper. (Petfinder's API is gone as of Dec 2025 — see section 7 note.)
 - **Google/Apple Sign-In** — official SDKs only.
 - **Apple/Google In-App Purchase** — official SDKs, for any future premium tier.
 
@@ -139,7 +141,7 @@ See [HOUSE-RULES.md](HOUSE-RULES.md).
 |---|---|---|
 | Supabase/Firebase | Generous free tier | Roughly thousands of active users |
 | Expo/Vercel hosting | Free tier | High traffic / custom domains |
-| Petfinder/RescueGroups/ShelterLuv APIs | Free, rate-limited | Rarely a paid tier; watch rate limits |
+| RescueGroups.org / ShelterLuv APIs | Free, rate-limited | Rarely a paid tier; watch rate limits |
 | Google/Apple Sign-In | Free | Never |
 | App Store IAP | Free to integrate | 15-30% cut only on paid subscription revenue |
 
