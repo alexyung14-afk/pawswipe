@@ -1,26 +1,35 @@
 import { supabase } from '../../shared/db/supabaseClient';
 import type { Dog } from '../../shared/db/types';
 
-export interface ShortlistError {
+export interface LikesError {
   message: string;
 }
 
-export async function addToShortlist(
+export async function addToLikes(
   userId: string,
   dogId: string
-): Promise<{ error: ShortlistError | null }> {
+): Promise<{ error: LikesError | null }> {
   const { error } = await supabase
-    .from('shortlist_entries')
+    .from('likes')
     .upsert({ user_id: userId, dog_id: dogId }, { onConflict: 'user_id,dog_id', ignoreDuplicates: true });
 
   return { error: error ? { message: error.message } : null };
 }
 
-export async function fetchShortlist(
+export async function removeFromLikes(
+  userId: string,
+  dogId: string
+): Promise<{ error: LikesError | null }> {
+  const { error } = await supabase.from('likes').delete().eq('user_id', userId).eq('dog_id', dogId);
+
+  return { error: error ? { message: error.message } : null };
+}
+
+export async function fetchLikes(
   userId: string
-): Promise<{ dogs: Dog[]; error: ShortlistError | null }> {
+): Promise<{ dogs: Dog[]; error: LikesError | null }> {
   const { data, error } = await supabase
-    .from('shortlist_entries')
+    .from('likes')
     .select('created_at, dogs(*)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });

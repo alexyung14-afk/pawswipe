@@ -13,19 +13,19 @@ export interface DogRepositoryError {
 }
 
 /**
- * Available dogs the given user hasn't already shortlisted, for the swipe deck.
+ * Available dogs the given user hasn't already liked, for the swipe deck.
  */
 export async function fetchSwipeDeck(
   userId: string,
   filters: DogFilters = {}
 ): Promise<{ dogs: Dog[]; error: DogRepositoryError | null }> {
-  const { data: shortlisted, error: shortlistError } = await supabase
-    .from('shortlist_entries')
+  const { data: liked, error: likesError } = await supabase
+    .from('likes')
     .select('dog_id')
     .eq('user_id', userId);
 
-  if (shortlistError) {
-    return { dogs: [], error: { message: shortlistError.message } };
+  if (likesError) {
+    return { dogs: [], error: { message: likesError.message } };
   }
 
   let query = supabase
@@ -34,7 +34,7 @@ export async function fetchSwipeDeck(
     .eq('status', 'available')
     .order('created_at', { ascending: false });
 
-  const excludeIds = (shortlisted ?? []).map((row) => row.dog_id);
+  const excludeIds = (liked ?? []).map((row) => row.dog_id);
   if (excludeIds.length > 0) {
     query = query.not('id', 'in', `(${excludeIds.join(',')})`);
   }

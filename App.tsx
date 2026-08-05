@@ -4,26 +4,24 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { AuthProvider, useAuth } from './src/shared/auth/AuthContext';
 import { SignInScreen } from './src/shared/auth/SignInScreen';
 import { SwipeDeckScreen } from './src/features/swiping/SwipeDeckScreen';
-import { ShortlistScreen } from './src/features/swiping/ShortlistScreen';
+import { LikesScreen } from './src/features/swiping/LikesScreen';
 
-type Tab = 'swipe' | 'shortlist';
+type Tab = 'find' | 'likes';
 
 function SignedInApp() {
-  const [tab, setTab] = useState<Tab>('swipe');
+  const [tab, setTab] = useState<Tab>('find');
 
   return (
     <View style={styles.appContainer}>
       <View style={styles.screenArea}>
-        {tab === 'swipe' ? <SwipeDeckScreen /> : <ShortlistScreen />}
+        {tab === 'find' ? <SwipeDeckScreen /> : <LikesScreen />}
       </View>
       <View style={styles.tabBar}>
-        <Pressable style={styles.tabButton} onPress={() => setTab('swipe')}>
-          <Text style={[styles.tabLabel, tab === 'swipe' && styles.tabLabelActive]}>Swipe</Text>
+        <Pressable style={styles.tabButton} onPress={() => setTab('find')}>
+          <Text style={[styles.tabLabel, tab === 'find' && styles.tabLabelActive]}>Find pets</Text>
         </Pressable>
-        <Pressable style={styles.tabButton} onPress={() => setTab('shortlist')}>
-          <Text style={[styles.tabLabel, tab === 'shortlist' && styles.tabLabelActive]}>
-            Shortlist
-          </Text>
+        <Pressable style={styles.tabButton} onPress={() => setTab('likes')}>
+          <Text style={[styles.tabLabel, tab === 'likes' && styles.tabLabelActive]}>Likes</Text>
         </Pressable>
       </View>
     </View>

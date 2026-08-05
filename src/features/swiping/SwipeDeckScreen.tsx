@@ -5,7 +5,7 @@ import type { Dog } from '../../shared/db/types';
 import { useAuth } from '../../shared/auth/AuthContext';
 import { SwipeCard, type SwipeCardHandle } from './components/SwipeCard';
 import { FilterBar } from './components/FilterBar';
-import { addToShortlist } from './shortlistRepository';
+import { addToLikes } from './likesRepository';
 
 export function SwipeDeckScreen() {
   const { user, signOut } = useAuth();
@@ -41,9 +41,9 @@ export function SwipeDeckScreen() {
   const handleLike = async (dog: Dog) => {
     advance();
     if (!user) return;
-    const { error: shortlistError } = await addToShortlist(user.id, dog.id);
-    if (shortlistError) {
-      setBanner("Couldn't save that to your shortlist. Check your connection and try again.");
+    const { error: likeError } = await addToLikes(user.id, dog.id);
+    if (likeError) {
+      setBanner("Couldn't save that to your likes. Check your connection and try again.");
     }
   };
 
@@ -120,7 +120,7 @@ export function SwipeDeckScreen() {
             <Pressable
               style={[styles.actionButton, styles.likeButton]}
               onPress={() => cardRef.current?.swipeRight()}
-              accessibilityLabel="Shortlist this dog"
+              accessibilityLabel="Like this dog"
             >
               <Text style={[styles.actionIcon, styles.likeIcon]}>♥</Text>
             </Pressable>

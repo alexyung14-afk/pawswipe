@@ -33,7 +33,7 @@ export interface AdopterProfile {
   updated_at: string;
 }
 
-export interface ShortlistEntry {
+export interface Like {
   id: string;
   user_id: string;
   dog_id: string;

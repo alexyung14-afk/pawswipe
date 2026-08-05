@@ -1,6 +1,6 @@
 # Pawswipe — Product & Build Plan
 
-*Swipe to shortlist. Tap to apply. No more 8-page forms for a dog you've already lost interest in by the time you finish page 3.*
+*Swipe to like. Tap to apply. No more 8-page forms for a dog you've already lost interest in by the time you finish page 3.*
 
 ---
 
@@ -36,9 +36,9 @@ Someone actively researching adoption (not just browsing for fun), overwhelmed b
 flowchart TD
     A[Open app] --> B[Set preferences: breed, size, age, location]
     B --> C[Swipe through dogs]
-    C -->|Swipe right| D[Dog saved to shortlist]
+    C -->|Swipe right| D[Dog saved to Likes]
     C -->|Swipe left| C
-    D --> E[Review shortlist]
+    D --> E[Review Likes]
     E --> F[Tap Apply on a dog]
     F --> G[Profile auto-fills that shelter's application]
     G --> H[Review & submit]
@@ -73,7 +73,7 @@ flowchart TD
 ## 6. Features
 
 ### V1 (build now)
-- Swipe interface (right = shortlist, left = pass)
+- Swipe interface (right = like, left = pass), with "Find pets" and "Likes" as the two tabs
 - Preference filters (breed, size, age, distance)
 - `DogRepository` abstraction pulling from multiple providers (RescueGroups.org now; room for more later — see note below on Petfinder)
 - One-time adopter profile (housing, experience, household, references)
@@ -94,7 +94,7 @@ flowchart TD
 ```mermaid
 flowchart LR
     U[User's Phone] -->|swipes, taps apply| App[Pawswipe App]
-    App --> DB[(Database — where dogs, profiles, shortlists, and applications get saved)]
+    App --> DB[(Database — where dogs, profiles, likes, and applications get saved)]
     App --> Repo[DogRepository — reads cached dogs from the Database]
     Sync[Scheduled sync job, runs every few hours] --> RG[RescueGroups Provider]
     Sync --> SL[ShelterLuv Provider - V2, per-shelter pilots]
@@ -112,7 +112,7 @@ Data flow in plain words: a scheduled sync job (not the app itself) asks each co
 | Tool | What it does | Why | Cost |
 |---|---|---|---|
 | React Native (via Expo) | Builds one app for iPhone and Android at once | Swiping is a phone-native gesture; a web app fights the interaction | Free |
-| Supabase (or Firebase) | Database — saves profiles, shortlists, applications | Managed, handles backups automatically, generous free tier | Free up to a few thousand users |
+| Supabase (or Firebase) | Database — saves profiles, likes, applications | Managed, handles backups automatically, generous free tier | Free up to a few thousand users |
 | Google/Apple Sign-In | Lets people log in without a new password | Standard, low friction, official SDKs only | Free |
 | RescueGroups.org API (ShelterLuv later, per-shelter) | Supplies the dog listings | Official API, swappable behind `DogRepository` so no single source is a single point of failure | Free (rate-limited) |
 | Apple/Google In-App Purchase | Handles any future premium subscription | Required by app stores for digital features, no separate payment integration needed | Free to integrate, 15-30% cut on paid subscriptions |
@@ -122,7 +122,7 @@ Data flow in plain words: a scheduled sync job (not the app itself) asks each co
 
 - **A Dog** has: name, breed, age, size, photos, description, source provider, source listing ID, status (available/pending/adopted).
 - **An Adopter Profile** has: housing type, yard/fenced status, work schedule, household members, pet experience, references — the fields most shelter applications ask for.
-- **A Shortlist Entry** links a user to a dog they swiped right on.
+- **A Like** links a user to a dog they swiped right on.
 - **An Application** links a user, a dog, the shelter it was sent to, the data submitted, and its status (submitted / no response / update received).
 
 ## 10. House Rules for Your AI
@@ -151,7 +151,7 @@ See [HOUSE-RULES.md](HOUSE-RULES.md).
 
 ## 13. Timeline
 
-- V1 core (swipe, shortlist, profile, one-tap apply, single provider): ~3-4 weeks with AI help
+- V1 core (swipe, likes, profile, one-tap apply, single provider): ~3-4 weeks with AI help
 - Multi-provider `DogRepository` + fallback logic: ~1 week
 - Polish, error handling, sharing feature: ~1-2 weeks
 - Pre-launch prep (legal pages, security pass): ~1 week

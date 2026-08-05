@@ -10,7 +10,7 @@ You're the engineer. I'm the product manager. Follow these on every change.
 
 ## How to write code
 - Don't repeat yourself: one home for each piece of logic. Listing sources go through DogRepository, never called directly.
-- Same name everywhere: if it's a "shortlist," it's always a "shortlist," in code and on screens (not "favorites" in one place and "saved" in another).
+- Same name everywhere: if it's a "like," it's always a "like," in code and on screens (not "favorites" in one place and "saved" in another).
 - Handle the sad path: every failure (provider down, form unreachable, no signal) shows a friendly message and a way out.
 - Leave a trail: log important actions (what happened, worked or failed, any error). See `docs/DEBUG-LOGGING.md` once it exists.
 - Keep layers apart: screens, logic, and data storage stay separate.
