@@ -1,16 +1,51 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Dog } from '../../../shared/db/types';
+
+function PhotoGallery({ photos, name }: { photos: string[]; name: string }) {
+  const [index, setIndex] = useState(0);
+
+  if (photos.length === 0) {
+    return (
+      <View style={[styles.photo, styles.photoPlaceholder]}>
+        <Text style={styles.photoPlaceholderText}>No photo yet</Text>
+      </View>
+    );
+  }
+
+  const goPrev = () => setIndex((i) => Math.max(0, i - 1));
+  const goNext = () => setIndex((i) => Math.min(photos.length - 1, i + 1));
+
+  return (
+    <View style={styles.photo}>
+      <Image source={{ uri: photos[index] }} style={styles.photo} accessibilityLabel={`${name} photo ${index + 1} of ${photos.length}`} />
+      {photos.length > 1 ? (
+        <>
+          <View style={styles.dotRow}>
+            {photos.map((_, i) => (
+              <View key={i} style={[styles.dot, i === index && styles.dotActive]} />
+            ))}
+          </View>
+          <Pressable
+            style={styles.tapZoneLeft}
+            onPress={goPrev}
+            accessibilityLabel="Previous photo"
+          />
+          <Pressable
+            style={styles.tapZoneRight}
+            onPress={goNext}
+            accessibilityLabel="Next photo"
+          />
+        </>
+      ) : null}
+    </View>
+  );
+}
 
 export function DogCard({ dog }: { dog: Dog }) {
   return (
     <View style={styles.card}>
-      {dog.photos[0] ? (
-        <Image source={{ uri: dog.photos[0] }} style={styles.photo} />
-      ) : (
-        <View style={[styles.photo, styles.photoPlaceholder]}>
-          <Text style={styles.photoPlaceholderText}>No photo yet</Text>
-        </View>
-      )}
+      <PhotoGallery photos={dog.photos} name={dog.name} />
       <Text style={styles.name}>{dog.name}</Text>
       <Text style={styles.meta}>
         {[dog.breed, dog.size, dog.age_years ? `${dog.age_years}y` : null]
@@ -48,6 +83,37 @@ const styles = StyleSheet.create({
   },
   photoPlaceholder: { alignItems: 'center', justifyContent: 'center' },
   photoPlaceholderText: { color: '#999' },
+  dotRow: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    right: 8,
+    flexDirection: 'row',
+    gap: 4,
+  },
+  dot: {
+    flex: 1,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  dotActive: {
+    backgroundColor: '#fff',
+  },
+  tapZoneLeft: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: '35%',
+  },
+  tapZoneRight: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    right: 0,
+    width: '35%',
+  },
   name: { fontSize: 20, fontWeight: '700' },
   meta: { color: '#666', marginTop: 2 },
   shelter: { color: '#999', fontSize: 12, marginTop: 4 },
