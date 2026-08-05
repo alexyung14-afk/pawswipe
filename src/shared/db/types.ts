@@ -14,6 +14,7 @@ export interface Dog {
   status: DogStatus;
   shelter_name: string | null;
   shelter_contact: Record<string, unknown> | null;
+  location: string | null;
   created_at: string;
   updated_at: string;
 }
