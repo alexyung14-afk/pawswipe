@@ -16,10 +16,11 @@ interface SwipeCardProps {
   dog: Dog;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
+  onPress?: () => void;
 }
 
 export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(
-  ({ dog, onSwipeLeft, onSwipeRight }, ref) => {
+  ({ dog, onSwipeLeft, onSwipeRight, onPress }, ref) => {
     const position = useRef(new Animated.ValueXY()).current;
 
     // The card's data-layer effect (recording the swipe) fires on its own timer rather than
@@ -68,7 +69,7 @@ export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(
         style={[styles.container, { transform: [...position.getTranslateTransform(), { rotate }] }]}
         {...panResponder.panHandlers}
       >
-        <DogCard dog={dog} />
+        <DogCard dog={dog} onPress={onPress} />
       </Animated.View>
     );
   }

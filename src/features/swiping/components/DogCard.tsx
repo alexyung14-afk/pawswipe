@@ -18,7 +18,12 @@ function PhotoGallery({ photos, name }: { photos: string[]; name: string }) {
 
   return (
     <View style={styles.photo}>
-      <Image source={{ uri: photos[index] }} style={styles.photo} accessibilityLabel={`${name} photo ${index + 1} of ${photos.length}`} />
+      <Image
+        source={{ uri: photos[index] }}
+        style={styles.photo}
+        resizeMode="cover"
+        accessibilityLabel={`${name} photo ${index + 1} of ${photos.length}`}
+      />
       {photos.length > 1 ? (
         <>
           <View style={styles.dotRow}>
@@ -42,9 +47,9 @@ function PhotoGallery({ photos, name }: { photos: string[]; name: string }) {
   );
 }
 
-export function DogCard({ dog }: { dog: Dog }) {
+export function DogCard({ dog, onPress }: { dog: Dog; onPress?: () => void }) {
   return (
-    <View style={styles.card}>
+    <Pressable style={styles.card} onPress={onPress} disabled={!onPress}>
       <PhotoGallery photos={dog.photos} name={dog.name} />
       <Text style={styles.name}>{dog.name}</Text>
       <Text style={styles.meta}>
@@ -62,7 +67,7 @@ export function DogCard({ dog }: { dog: Dog }) {
           {dog.description}
         </Text>
       ) : null}
-    </View>
+    </Pressable>
   );
 }
 
@@ -76,10 +81,11 @@ const styles = StyleSheet.create({
   },
   photo: {
     width: '100%',
-    height: 320,
+    aspectRatio: 4 / 5,
     borderRadius: 8,
     marginBottom: 8,
     backgroundColor: '#f2f2f2',
+    overflow: 'hidden',
   },
   photoPlaceholder: { alignItems: 'center', justifyContent: 'center' },
   photoPlaceholderText: { color: '#999' },

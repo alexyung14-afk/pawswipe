@@ -4,6 +4,7 @@ import { useAuth } from '../../shared/auth/AuthContext';
 import type { Dog } from '../../shared/db/types';
 import { DogCard } from './components/DogCard';
 import { fetchLikes, removeFromLikes } from './likesRepository';
+import { DogDetailScreen } from './DogDetailScreen';
 
 export function LikesScreen() {
   const { user } = useAuth();
@@ -11,6 +12,7 @@ export function LikesScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
+  const [viewingDog, setViewingDog] = useState<Dog | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -34,6 +36,10 @@ export function LikesScreen() {
       setDogs((current) => [dog, ...current]);
     }
   };
+
+  if (viewingDog) {
+    return <DogDetailScreen dog={viewingDog} onClose={() => setViewingDog(null)} />;
+  }
 
   return (
     <View style={styles.container}>
@@ -71,7 +77,7 @@ export function LikesScreen() {
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <View>
-              <DogCard dog={item} />
+              <DogCard dog={item} onPress={() => setViewingDog(item)} />
               <Pressable style={styles.removeButton} onPress={() => handleRemove(item)}>
                 <Text style={styles.removeText}>Remove from Likes</Text>
               </Pressable>

@@ -6,6 +6,7 @@ import { useAuth } from '../../shared/auth/AuthContext';
 import { SwipeCard, type SwipeCardHandle } from './components/SwipeCard';
 import { FilterBar } from './components/FilterBar';
 import { addToLikes } from './likesRepository';
+import { DogDetailScreen } from './DogDetailScreen';
 
 export function SwipeDeckScreen() {
   const { user, signOut } = useAuth();
@@ -15,6 +16,7 @@ export function SwipeDeckScreen() {
   const [banner, setBanner] = useState<string | null>(null);
   const [filters, setFilters] = useState<DogFilters>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [viewingDog, setViewingDog] = useState<Dog | null>(null);
   const cardRef = useRef<SwipeCardHandle>(null);
 
   const load = useCallback(async () => {
@@ -48,6 +50,10 @@ export function SwipeDeckScreen() {
   };
 
   const currentDog = dogs[0];
+
+  if (viewingDog) {
+    return <DogDetailScreen dog={viewingDog} onClose={() => setViewingDog(null)} />;
+  }
 
   return (
     <View style={styles.container}>
@@ -107,6 +113,7 @@ export function SwipeDeckScreen() {
               dog={currentDog}
               onSwipeLeft={handlePass}
               onSwipeRight={() => handleLike(currentDog)}
+              onPress={() => setViewingDog(currentDog)}
             />
           </View>
           <View style={styles.actions}>
