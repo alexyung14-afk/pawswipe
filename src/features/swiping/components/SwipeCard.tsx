@@ -1,7 +1,7 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { Animated, PanResponder, StyleSheet } from 'react-native';
-import type { Dog } from '../../../shared/db/types';
-import { DogCard } from './DogCard';
+import type { Animal } from '../../../shared/db/types';
+import { AnimalCard } from './AnimalCard';
 
 const SWIPE_THRESHOLD = 120;
 const SWIPE_OUT_DISTANCE = 500;
@@ -13,14 +13,14 @@ export interface SwipeCardHandle {
 }
 
 interface SwipeCardProps {
-  dog: Dog;
+  animal: Animal;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
   onPress?: () => void;
 }
 
 export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(
-  ({ dog, onSwipeLeft, onSwipeRight, onPress }, ref) => {
+  ({ animal, onSwipeLeft, onSwipeRight, onPress }, ref) => {
     const position = useRef(new Animated.ValueXY()).current;
 
     // The card's data-layer effect (recording the swipe) fires on its own timer rather than
@@ -69,7 +69,7 @@ export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(
         style={[styles.container, { transform: [...position.getTranslateTransform(), { rotate }] }]}
         {...panResponder.panHandlers}
       >
-        <DogCard dog={dog} onPress={onPress} />
+        <AnimalCard animal={animal} onPress={onPress} />
       </Animated.View>
     );
   }

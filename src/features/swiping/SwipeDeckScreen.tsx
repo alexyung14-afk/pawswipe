@@ -1,29 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { fetchSwipeDeck, type DogFilters } from '../../shared/data/DogRepository';
-import type { Dog } from '../../shared/db/types';
+import { fetchSwipeDeck, type AnimalFilters } from '../../shared/data/AnimalRepository';
+import type { Animal } from '../../shared/db/types';
 import { useAuth } from '../../shared/auth/AuthContext';
 import { SwipeCard, type SwipeCardHandle } from './components/SwipeCard';
 import { FilterBar } from './components/FilterBar';
 import { addToLikes } from './likesRepository';
-import { DogDetailScreen } from './DogDetailScreen';
+import { AnimalDetailScreen } from './AnimalDetailScreen';
 
 export function SwipeDeckScreen() {
   const { user, signOut } = useAuth();
-  const [dogs, setDogs] = useState<Dog[]>([]);
+  const [animals, setAnimals] = useState<Animal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
-  const [filters, setFilters] = useState<DogFilters>({});
+  const [filters, setFilters] = useState<AnimalFilters>({});
   const [showFilters, setShowFilters] = useState(false);
-  const [viewingDog, setViewingDog] = useState<Dog | null>(null);
+  const [viewingAnimal, setViewingAnimal] = useState<Animal | null>(null);
   const cardRef = useRef<SwipeCardHandle>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const { dogs: result, error: fetchError } = await fetchSwipeDeck(user.id, filters);
-    setDogs(result);
+    const { animals: result, error: fetchError } = await fetchSwipeDeck(user.id, filters);
+    setAnimals(result);
     setError(fetchError ? fetchError.message : null);
     setLoading(false);
   }, [user, filters]);
@@ -33,26 +33,26 @@ export function SwipeDeckScreen() {
   }, [load]);
 
   const advance = () => {
-    setDogs((current) => current.slice(1));
+    setAnimals((current) => current.slice(1));
   };
 
   const handlePass = () => {
     advance();
   };
 
-  const handleLike = async (dog: Dog) => {
+  const handleLike = async (animal: Animal) => {
     advance();
     if (!user) return;
-    const { error: likeError } = await addToLikes(user.id, dog.id);
+    const { error: likeError } = await addToLikes(user.id, animal.id);
     if (likeError) {
       setBanner("Couldn't save that to your likes. Check your connection and try again.");
     }
   };
 
-  const currentDog = dogs[0];
+  const currentAnimal = animals[0];
 
-  if (viewingDog) {
-    return <DogDetailScreen dog={viewingDog} onClose={() => setViewingDog(null)} />;
+  if (viewingAnimal) {
+    return <AnimalDetailScreen animal={viewingAnimal} onClose={() => setViewingAnimal(null)} />;
   }
 
   return (
@@ -91,15 +91,15 @@ export function SwipeDeckScreen() {
         </View>
       ) : error ? (
         <View style={styles.centered}>
-          <Text style={styles.errorTitle}>Couldn't load dogs</Text>
+          <Text style={styles.errorTitle}>Couldn't load pets</Text>
           <Text style={styles.errorMessage}>{error}</Text>
           <Pressable style={styles.retryButton} onPress={load}>
             <Text style={styles.retryText}>Try again</Text>
           </Pressable>
         </View>
-      ) : !currentDog ? (
+      ) : !currentAnimal ? (
         <View style={styles.centered}>
-          <Text style={styles.emptyTitle}>You've seen every dog</Text>
+          <Text style={styles.emptyTitle}>You've seen everyone</Text>
           <Text style={styles.emptyMessage}>
             Check back soon for new listings, or adjust your filters.
           </Text>
@@ -108,26 +108,26 @@ export function SwipeDeckScreen() {
         <>
           <View style={styles.deck}>
             <SwipeCard
-              key={currentDog.id}
+              key={currentAnimal.id}
               ref={cardRef}
-              dog={currentDog}
+              animal={currentAnimal}
               onSwipeLeft={handlePass}
-              onSwipeRight={() => handleLike(currentDog)}
-              onPress={() => setViewingDog(currentDog)}
+              onSwipeRight={() => handleLike(currentAnimal)}
+              onPress={() => setViewingAnimal(currentAnimal)}
             />
           </View>
           <View style={styles.actions}>
             <Pressable
               style={[styles.actionButton, styles.passButton]}
               onPress={() => cardRef.current?.swipeLeft()}
-              accessibilityLabel="Pass on this dog"
+              accessibilityLabel="Pass on this pet"
             >
               <Text style={[styles.actionIcon, styles.passIcon]}>✕</Text>
             </Pressable>
             <Pressable
               style={[styles.actionButton, styles.likeButton]}
               onPress={() => cardRef.current?.swipeRight()}
-              accessibilityLabel="Like this dog"
+              accessibilityLabel="Like this pet"
             >
               <Text style={[styles.actionIcon, styles.likeIcon]}>♥</Text>
             </Pressable>

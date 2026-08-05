@@ -1,9 +1,16 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import type { DogFilters } from '../../../shared/data/DogRepository';
-import type { DogSize } from '../../../shared/db/types';
+import type { AnimalFilters } from '../../../shared/data/AnimalRepository';
+import type { AnimalSize, Species } from '../../../shared/db/types';
 
-const SIZES: { label: string; value: DogSize | null }[] = [
+const SPECIES_OPTIONS: { label: string; value: Species | null }[] = [
+  { label: 'Any', value: null },
+  { label: 'Dogs', value: 'dog' },
+  { label: 'Cats', value: 'cat' },
+  { label: 'Other', value: 'other' },
+];
+
+const SIZES: { label: string; value: AnimalSize | null }[] = [
   { label: 'Any', value: null },
   { label: 'Small', value: 'small' },
   { label: 'Medium', value: 'medium' },
@@ -14,16 +21,18 @@ export function FilterBar({
   filters,
   onApply,
 }: {
-  filters: DogFilters;
-  onApply: (filters: DogFilters) => void;
+  filters: AnimalFilters;
+  onApply: (filters: AnimalFilters) => void;
 }) {
+  const [species, setSpecies] = useState<Species | null>(filters.species ?? null);
   const [breed, setBreed] = useState(filters.breed ?? '');
-  const [size, setSize] = useState<DogSize | null>(filters.size ?? null);
+  const [size, setSize] = useState<AnimalSize | null>(filters.size ?? null);
   const [maxAge, setMaxAge] = useState(filters.maxAgeYears?.toString() ?? '');
   const [location, setLocation] = useState(filters.location ?? '');
 
   const apply = () => {
     onApply({
+      species: species ?? undefined,
       breed: breed.trim() || undefined,
       size: size ?? undefined,
       maxAgeYears: maxAge.trim() ? Number(maxAge) : undefined,
@@ -32,6 +41,7 @@ export function FilterBar({
   };
 
   const clear = () => {
+    setSpecies(null);
     setBreed('');
     setSize(null);
     setMaxAge('');
@@ -41,6 +51,21 @@ export function FilterBar({
 
   return (
     <View style={styles.panel}>
+      <Text style={styles.label}>Species</Text>
+      <View style={styles.row}>
+        {SPECIES_OPTIONS.map((option) => (
+          <Pressable
+            key={option.label}
+            style={[styles.chip, species === option.value && styles.chipSelected]}
+            onPress={() => setSpecies(option.value)}
+          >
+            <Text style={[styles.chipText, species === option.value && styles.chipTextSelected]}>
+              {option.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       <Text style={styles.label}>Breed</Text>
       <TextInput
         style={styles.input}
@@ -108,7 +133,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  row: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  row: { flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' },
   chip: {
     borderWidth: 1,
     borderColor: '#ddd',

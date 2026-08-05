@@ -1,5 +1,5 @@
 import { supabase } from '../../shared/db/supabaseClient';
-import type { Dog } from '../../shared/db/types';
+import type { Animal } from '../../shared/db/types';
 
 export interface LikesError {
   message: string;
@@ -7,40 +7,47 @@ export interface LikesError {
 
 export async function addToLikes(
   userId: string,
-  dogId: string
+  animalId: string
 ): Promise<{ error: LikesError | null }> {
   const { error } = await supabase
     .from('likes')
-    .upsert({ user_id: userId, dog_id: dogId }, { onConflict: 'user_id,dog_id', ignoreDuplicates: true });
+    .upsert(
+      { user_id: userId, animal_id: animalId },
+      { onConflict: 'user_id,animal_id', ignoreDuplicates: true }
+    );
 
   return { error: error ? { message: error.message } : null };
 }
 
 export async function removeFromLikes(
   userId: string,
-  dogId: string
+  animalId: string
 ): Promise<{ error: LikesError | null }> {
-  const { error } = await supabase.from('likes').delete().eq('user_id', userId).eq('dog_id', dogId);
+  const { error } = await supabase
+    .from('likes')
+    .delete()
+    .eq('user_id', userId)
+    .eq('animal_id', animalId);
 
   return { error: error ? { message: error.message } : null };
 }
 
 export async function fetchLikes(
   userId: string
-): Promise<{ dogs: Dog[]; error: LikesError | null }> {
+): Promise<{ animals: Animal[]; error: LikesError | null }> {
   const { data, error } = await supabase
     .from('likes')
-    .select('created_at, dogs(*)')
+    .select('created_at, animals(*)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
   if (error) {
-    return { dogs: [], error: { message: error.message } };
+    return { animals: [], error: { message: error.message } };
   }
 
-  const dogs = (data ?? [])
-    .map((row) => row.dogs as unknown as Dog | null)
-    .filter((dog): dog is Dog => dog !== null);
+  const animals = (data ?? [])
+    .map((row) => row.animals as unknown as Animal | null)
+    .filter((animal): animal is Animal => animal !== null);
 
-  return { dogs, error: null };
+  return { animals, error: null };
 }

@@ -1,24 +1,24 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../../shared/auth/AuthContext';
-import type { Dog } from '../../shared/db/types';
-import { DogCard } from './components/DogCard';
+import type { Animal } from '../../shared/db/types';
+import { AnimalCard } from './components/AnimalCard';
 import { fetchLikes, removeFromLikes } from './likesRepository';
-import { DogDetailScreen } from './DogDetailScreen';
+import { AnimalDetailScreen } from './AnimalDetailScreen';
 
 export function LikesScreen() {
   const { user } = useAuth();
-  const [dogs, setDogs] = useState<Dog[]>([]);
+  const [animals, setAnimals] = useState<Animal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
-  const [viewingDog, setViewingDog] = useState<Dog | null>(null);
+  const [viewingAnimal, setViewingAnimal] = useState<Animal | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const { dogs: result, error: fetchError } = await fetchLikes(user.id);
-    setDogs(result);
+    const { animals: result, error: fetchError } = await fetchLikes(user.id);
+    setAnimals(result);
     setError(fetchError ? fetchError.message : null);
     setLoading(false);
   }, [user]);
@@ -27,18 +27,18 @@ export function LikesScreen() {
     load();
   }, [load]);
 
-  const handleRemove = async (dog: Dog) => {
-    setDogs((current) => current.filter((d) => d.id !== dog.id));
+  const handleRemove = async (animal: Animal) => {
+    setAnimals((current) => current.filter((a) => a.id !== animal.id));
     if (!user) return;
-    const { error: removeError } = await removeFromLikes(user.id, dog.id);
+    const { error: removeError } = await removeFromLikes(user.id, animal.id);
     if (removeError) {
-      setBanner("Couldn't remove that dog. Check your connection and try again.");
-      setDogs((current) => [dog, ...current]);
+      setBanner("Couldn't remove that. Check your connection and try again.");
+      setAnimals((current) => [animal, ...current]);
     }
   };
 
-  if (viewingDog) {
-    return <DogDetailScreen dog={viewingDog} onClose={() => setViewingDog(null)} />;
+  if (viewingAnimal) {
+    return <AnimalDetailScreen animal={viewingAnimal} onClose={() => setViewingAnimal(null)} />;
   }
 
   return (
@@ -65,19 +65,19 @@ export function LikesScreen() {
             <Text style={styles.retryText}>Try again</Text>
           </Pressable>
         </View>
-      ) : dogs.length === 0 ? (
+      ) : animals.length === 0 ? (
         <View style={styles.centered}>
           <Text style={styles.emptyTitle}>Nothing here yet</Text>
-          <Text style={styles.emptyMessage}>Swipe right on a dog to add it to your likes.</Text>
+          <Text style={styles.emptyMessage}>Swipe right on a pet to add it to your likes.</Text>
         </View>
       ) : (
         <FlatList
-          data={dogs}
-          keyExtractor={(dog) => dog.id}
+          data={animals}
+          keyExtractor={(animal) => animal.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <View>
-              <DogCard dog={item} onPress={() => setViewingDog(item)} />
+              <AnimalCard animal={item} onPress={() => setViewingAnimal(item)} />
               <Pressable style={styles.removeButton} onPress={() => handleRemove(item)}>
                 <Text style={styles.removeText}>Remove from Likes</Text>
               </Pressable>

@@ -66,7 +66,7 @@ flowchart TD
     A[Dog gets adopted by someone else mid-flow] --> B[Show 'no longer available' + suggest similar dogs]
     C[User already applied to this dog elsewhere] --> D[Warn before duplicate submission]
     E[User returns after 3 months away] --> F[Refresh listings, ask to confirm preferences still valid]
-    G[Provider (Petfinder/RescueGroups) API goes down] --> H[DogRepository falls back to next provider automatically]
+    G[Provider (RescueGroups/ShelterLuv) API goes down] --> H[AnimalRepository falls back to next provider automatically]
     I[User wants to delete their account/data] --> J[One clear delete flow, confirms data removed from provider-facing forms too]
 ```
 
@@ -75,7 +75,8 @@ flowchart TD
 ### V1 (build now)
 - Swipe interface (right = like, left = pass), with "Find pets" and "Likes" as the two tabs
 - Preference filters (breed, size, age, distance)
-- `DogRepository` abstraction pulling from multiple providers (RescueGroups.org now; room for more later — see note below on Petfinder)
+- `AnimalRepository` abstraction pulling from multiple providers (RescueGroups.org now; room for more later — see note below on Petfinder)
+- Species filter (dogs / cats / other pets) alongside breed, size, age, location — same swipe experience, just narrowed to what the user is actually looking for
 - One-time adopter profile (housing, experience, household, references)
 - One-tap "Apply" that auto-fills a shelter's application from that profile
 - Application status tracking (submitted / no response yet / update)
@@ -94,8 +95,8 @@ flowchart TD
 ```mermaid
 flowchart LR
     U[User's Phone] -->|swipes, taps apply| App[Pawswipe App]
-    App --> DB[(Database — where dogs, profiles, likes, and applications get saved)]
-    App --> Repo[DogRepository — reads cached dogs from the Database]
+    App --> DB[(Database — where animals, profiles, likes, and applications get saved)]
+    App --> Repo[AnimalRepository — reads cached animals from the Database, filterable by species]
     Sync[Scheduled sync job, runs every few hours] --> RG[RescueGroups Provider]
     Sync --> SL[ShelterLuv Provider - V2, per-shelter pilots]
     Sync --> DB
@@ -103,9 +104,11 @@ flowchart LR
     App -->|auto-filled application| Shelter[Shelter's own form/email]
 ```
 
-Data flow in plain words: a scheduled sync job (not the app itself) asks each connected provider for matching dogs every few hours and saves them into the Database → the app's `DogRepository` reads dogs straight from that Database, never live from a provider → app shows them as swipeable cards → right-swipe saves to the Database → tapping Apply pulls the saved adopter profile and fills out that specific shelter's form → submission and its status get logged in the Database so the user can track it.
+Data flow in plain words: a scheduled sync job (not the app itself) asks each connected provider for matching animals every few hours and saves them into the Database → the app's `AnimalRepository` reads animals straight from that Database, never live from a provider → app shows them as swipeable cards, filterable by species → right-swipe saves to the Database → tapping Apply pulls the saved adopter profile and fills out that specific shelter's form → submission and its status get logged in the Database so the user can track it.
 
 > **Provider note (added after V1 build started):** Petfinder shut down its public developer API on December 2, 2025, replacing it with a website-only embeddable widget that apps like this can't pull data from. RescueGroups.org is the V1 provider instead — same nationwide-aggregator shape as Petfinder was. ShelterLuv's API is per-shelter (each rescue grants its own key), so it fits better as a V2 direct-shelter-pilot integration than a V1 aggregator.
+>
+> **Species note (added after V1 build started):** the app isn't dogs-only — a Species filter (dogs/cats/other) narrows the swipe deck to whatever the user is looking for. Confirmed with RescueGroups.org for dogs and cats; "other" species (rabbits, birds, etc.) works as a filter value but isn't wired to a real provider query yet, since their exact taxonomy for those isn't verified against the live API.
 
 ## 8. Tech Stack
 
@@ -114,16 +117,16 @@ Data flow in plain words: a scheduled sync job (not the app itself) asks each co
 | React Native (via Expo) | Builds one app for iPhone and Android at once | Swiping is a phone-native gesture; a web app fights the interaction | Free |
 | Supabase (or Firebase) | Database — saves profiles, likes, applications | Managed, handles backups automatically, generous free tier | Free up to a few thousand users |
 | Google/Apple Sign-In | Lets people log in without a new password | Standard, low friction, official SDKs only | Free |
-| RescueGroups.org API (ShelterLuv later, per-shelter) | Supplies the dog listings | Official API, swappable behind `DogRepository` so no single source is a single point of failure | Free (rate-limited) |
+| RescueGroups.org API (ShelterLuv later, per-shelter) | Supplies the animal listings (dogs, cats; other species pending real-API verification) | Official API, swappable behind `AnimalRepository` so no single source is a single point of failure | Free (rate-limited) |
 | Apple/Google In-App Purchase | Handles any future premium subscription | Required by app stores for digital features, no separate payment integration needed | Free to integrate, 15-30% cut on paid subscriptions |
 | Expo / Vercel (hosting) | Gets the app built and distributed | Standard for React Native, free tier well past launch | Free tier |
 
 ## 9. Data Model (plain words)
 
-- **A Dog** has: name, breed, age, size, photos, description, source provider, source listing ID, status (available/pending/adopted).
+- **An Animal** has: name, species (dog/cat/other), breed, age, size, photos, description, source provider, source listing ID, status (available/pending/adopted).
 - **An Adopter Profile** has: housing type, yard/fenced status, work schedule, household members, pet experience, references — the fields most shelter applications ask for.
-- **A Like** links a user to a dog they swiped right on.
-- **An Application** links a user, a dog, the shelter it was sent to, the data submitted, and its status (submitted / no response / update received).
+- **A Like** links a user to an animal they swiped right on.
+- **An Application** links a user, an animal, the shelter it was sent to, the data submitted, and its status (submitted / no response / update received).
 
 ## 10. House Rules for Your AI
 
@@ -131,7 +134,7 @@ See [HOUSE-RULES.md](HOUSE-RULES.md).
 
 ## 11. Integrations
 
-- **RescueGroups.org API** (V1), **ShelterLuv API** (V2, per-shelter) — each behind a `Provider` implementation of a common `DogRepository` interface, so adding or dropping a source never touches app logic. Use each company's official API directly, no third-party wrapper. (Petfinder's API is gone as of Dec 2025 — see section 7 note.)
+- **RescueGroups.org API** (V1), **ShelterLuv API** (V2, per-shelter) — each behind a `Provider` implementation of a common `AnimalRepository` interface, so adding or dropping a source never touches app logic. Use each company's official API directly, no third-party wrapper. (Petfinder's API is gone as of Dec 2025 — see section 7 note.)
 - **Google/Apple Sign-In** — official SDKs only.
 - **Apple/Google In-App Purchase** — official SDKs, for any future premium tier.
 
@@ -152,7 +155,7 @@ See [HOUSE-RULES.md](HOUSE-RULES.md).
 ## 13. Timeline
 
 - V1 core (swipe, likes, profile, one-tap apply, single provider): ~3-4 weeks with AI help
-- Multi-provider `DogRepository` + fallback logic: ~1 week
+- Multi-provider `AnimalRepository` + fallback logic: ~1 week
 - Polish, error handling, sharing feature: ~1-2 weeks
 - Pre-launch prep (legal pages, security pass): ~1 week
 
@@ -210,7 +213,7 @@ Run these with your AI tool before showing the app to anyone:
 
 - **API** — a way for two apps to share data with each other.
 - **Database** — where your app saves things, like a giant organized spreadsheet.
-- **Repository pattern** — one door (`DogRepository`) that many different data sources plug into, so swapping a source doesn't touch the rest of the app.
+- **Repository pattern** — one door (`AnimalRepository`) that many different data sources plug into, so swapping a source doesn't touch the rest of the app.
 - **Managed service** — a tool like Supabase that handles the hard infrastructure work (backups, scaling) for you.
 - **Environment variables** — a separate, protected place to store secret keys, away from your actual code.
 - **In-app purchase (IAP)** — the app store's own payment system, required for digital subscriptions inside mobile apps.

@@ -9,7 +9,7 @@ You're the engineer. I'm the product manager. Follow these on every change.
 - Aim at a finish line: work to a clear, checkable "done," then show me how each item checks out.
 
 ## How to write code
-- Don't repeat yourself: one home for each piece of logic. Listing sources go through DogRepository, never called directly.
+- Don't repeat yourself: one home for each piece of logic. Listing sources go through AnimalRepository, never called directly.
 - Same name everywhere: if it's a "like," it's always a "like," in code and on screens (not "favorites" in one place and "saved" in another).
 - Handle the sad path: every failure (provider down, form unreachable, no signal) shows a friendly message and a way out.
 - Leave a trail: log important actions (what happened, worked or failed, any error). See `docs/DEBUG-LOGGING.md` once it exists.

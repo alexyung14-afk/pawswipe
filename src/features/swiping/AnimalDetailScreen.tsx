@@ -1,7 +1,7 @@
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import type { Dog } from '../../shared/db/types';
+import type { Animal } from '../../shared/db/types';
 
-export function DogDetailScreen({ dog, onClose }: { dog: Dog; onClose: () => void }) {
+export function AnimalDetailScreen({ animal, onClose }: { animal: Animal; onClose: () => void }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -10,14 +10,14 @@ export function DogDetailScreen({ dog, onClose }: { dog: Dog; onClose: () => voi
         </Pressable>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {dog.photos.length > 0 ? (
-          dog.photos.map((uri, i) => (
+        {animal.photos.length > 0 ? (
+          animal.photos.map((uri, i) => (
             <Image
               key={uri}
               source={{ uri }}
               style={styles.photo}
               resizeMode="cover"
-              accessibilityLabel={`${dog.name} photo ${i + 1} of ${dog.photos.length}`}
+              accessibilityLabel={`${animal.name} photo ${i + 1} of ${animal.photos.length}`}
             />
           ))
         ) : (
@@ -27,18 +27,18 @@ export function DogDetailScreen({ dog, onClose }: { dog: Dog; onClose: () => voi
         )}
 
         <View style={styles.info}>
-          <Text style={styles.name}>{dog.name}</Text>
+          <Text style={styles.name}>{animal.name}</Text>
           <Text style={styles.meta}>
-            {[dog.breed, dog.size, dog.age_years ? `${dog.age_years} years old` : null]
+            {[animal.breed, animal.size, animal.age_years ? `${animal.age_years} years old` : null]
               .filter(Boolean)
               .join(' · ')}
           </Text>
-          {dog.location || dog.shelter_name ? (
+          {animal.location || animal.shelter_name ? (
             <Text style={styles.shelter}>
-              {[dog.shelter_name, dog.location].filter(Boolean).join(' · ')}
+              {[animal.shelter_name, animal.location].filter(Boolean).join(' · ')}
             </Text>
           ) : null}
-          {dog.description ? <Text style={styles.description}>{dog.description}</Text> : null}
+          {animal.description ? <Text style={styles.description}>{animal.description}</Text> : null}
         </View>
       </ScrollView>
     </View>

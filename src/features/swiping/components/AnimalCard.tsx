@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import type { Dog } from '../../../shared/db/types';
+import type { Animal } from '../../../shared/db/types';
 
 function PhotoGallery({ photos, name }: { photos: string[]; name: string }) {
   const [index, setIndex] = useState(0);
@@ -47,24 +47,24 @@ function PhotoGallery({ photos, name }: { photos: string[]; name: string }) {
   );
 }
 
-export function DogCard({ dog, onPress }: { dog: Dog; onPress?: () => void }) {
+export function AnimalCard({ animal, onPress }: { animal: Animal; onPress?: () => void }) {
   return (
     <Pressable style={styles.card} onPress={onPress} disabled={!onPress}>
-      <PhotoGallery photos={dog.photos} name={dog.name} />
-      <Text style={styles.name}>{dog.name}</Text>
+      <PhotoGallery photos={animal.photos} name={animal.name} />
+      <Text style={styles.name}>{animal.name}</Text>
       <Text style={styles.meta}>
-        {[dog.breed, dog.size, dog.age_years ? `${dog.age_years}y` : null]
+        {[animal.breed, animal.size, animal.age_years ? `${animal.age_years}y` : null]
           .filter(Boolean)
           .join(' · ')}
       </Text>
-      {dog.location || dog.shelter_name ? (
+      {animal.location || animal.shelter_name ? (
         <Text style={styles.shelter}>
-          {[dog.shelter_name, dog.location].filter(Boolean).join(' · ')}
+          {[animal.shelter_name, animal.location].filter(Boolean).join(' · ')}
         </Text>
       ) : null}
-      {dog.description ? (
+      {animal.description ? (
         <Text style={styles.description} numberOfLines={5}>
-          {dog.description}
+          {animal.description}
         </Text>
       ) : null}
     </Pressable>
