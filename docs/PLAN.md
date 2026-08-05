@@ -204,6 +204,7 @@ Run these with your AI tool before showing the app to anyone:
 - Whether to run a small pilot with a handful of local shelters (Option B from planning) once V1 proves adopters actually want this.
 - Exact shape of the premium tier, if any (unlimited swipes? faster application delivery? something else).
 - Whether ShelterLuv's data terms allow the kind of auto-fill described here, worth a quick check before building that provider.
+- Adopt-a-Pet.com was considered as a V1 provider but ruled out: their nationwide search API requires a contractually agreed partnership (not self-serve), and their Pet List API is per-shelter only, not public. Worth revisiting as a V2 partnership once there's traction to negotiate with.
 
 ## Words You Now Know
 
