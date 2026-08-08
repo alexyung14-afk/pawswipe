@@ -16,6 +16,7 @@
 import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
 const RESCUEGROUPS_BASE_URL = 'https://api.rescuegroups.org/v5/public/animals/search/available/';
+const MAX_PHOTOS_PER_ANIMAL = 6;
 
 type OurSpecies = 'dog' | 'cat' | 'other';
 
@@ -31,6 +32,7 @@ interface RescueGroupsAnimal {
     name?: string;
     breedPrimary?: string;
     ageGroup?: string;
+    ageString?: string;
     sizeGroup?: string;
     descriptionText?: string;
     pictureThumbnailUrl?: string;
@@ -61,7 +63,8 @@ function mapSize(sizeGroup: string | undefined): 'small' | 'medium' | 'large' | 
   return null;
 }
 
-function mapAgeYears(ageGroup: string | undefined): number | null {
+// Bucket fallback for when ageString isn't present/parseable.
+function mapAgeGroupYears(ageGroup: string | undefined): number | null {
   if (!ageGroup) return null;
   const normalized = ageGroup.toLowerCase();
   if (normalized.includes('baby')) return 0.5;
@@ -69,6 +72,52 @@ function mapAgeYears(ageGroup: string | undefined): number | null {
   if (normalized.includes('adult')) return 5;
   if (normalized.includes('senior')) return 9;
   return null;
+}
+
+// RescueGroups' ageString looks like "11 Years 7 Months" or "6 Months" -- this is the real
+// age, far more precise than the ageGroup bucket (Baby/Young/Adult/Senior).
+function parseAgeYears(ageString: string | undefined, ageGroup: string | undefined): number | null {
+  if (ageString) {
+    const yearsMatch = ageString.match(/(\d+)\s*Year/i);
+    const monthsMatch = ageString.match(/(\d+)\s*Month/i);
+    if (yearsMatch || monthsMatch) {
+      const years = yearsMatch ? parseInt(yearsMatch[1], 10) : 0;
+      const months = monthsMatch ? parseInt(monthsMatch[1], 10) : 0;
+      return Math.round((years + months / 12) * 10) / 10;
+    }
+  }
+  return mapAgeGroupYears(ageGroup);
+}
+
+// RescueGroups descriptions come through with HTML entities un-decoded (&rsquo;, &nbsp;, etc.)
+// even in the "text" field, so they'd render as literal text in the app without this.
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: ' ',
+  rsquo: '’',
+  lsquo: '‘',
+  rdquo: '”',
+  ldquo: '“',
+  mdash: '—',
+  ndash: '–',
+  hellip: '…',
+};
+
+function decodeHtmlEntities(text: string): string {
+  return text.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (match, entity: string) => {
+    if (entity[0] === '#') {
+      const code =
+        entity[1] === 'x' || entity[1] === 'X'
+          ? parseInt(entity.slice(2), 16)
+          : parseInt(entity.slice(1), 10);
+      return Number.isNaN(code) ? match : String.fromCodePoint(code);
+    }
+    return NAMED_ENTITIES[entity] ?? match;
+  });
 }
 
 function findOrgName(
@@ -80,6 +129,38 @@ function findOrgName(
   if (!orgId) return null;
   const org = included.find((item) => item.type === 'orgs' && item.id === orgId);
   return (org?.attributes.name as string | undefined) ?? null;
+}
+
+// Prefers the "large" (500px) rendition over the 100px thumbnail, ordered the way the
+// shelter ordered them, capped so the swipe card gallery doesn't have to page through
+// dozens of photos.
+function findPhotoUrls(animal: RescueGroupsAnimal, included: RescueGroupsIncluded[]): string[] {
+  const pictureRel = animal.relationships?.pictures?.data ?? [];
+  const ids = new Set(pictureRel.map((p) => p.id));
+  if (ids.size === 0 && animal.attributes.pictureThumbnailUrl) {
+    return [animal.attributes.pictureThumbnailUrl];
+  }
+
+  const pictures = included
+    .filter((item) => item.type === 'pictures' && ids.has(item.id))
+    .sort((a, b) => {
+      const orderA = (a.attributes.order as number | undefined) ?? 0;
+      const orderB = (b.attributes.order as number | undefined) ?? 0;
+      return orderA - orderB;
+    });
+
+  const urls = pictures
+    .map((p) => {
+      const attrs = p.attributes as { large?: { url?: string }; small?: { url?: string } };
+      return attrs.large?.url ?? attrs.small?.url;
+    })
+    .filter((url): url is string => Boolean(url));
+
+  return urls.length > 0
+    ? urls.slice(0, MAX_PHOTOS_PER_ANIMAL)
+    : animal.attributes.pictureThumbnailUrl
+      ? [animal.attributes.pictureThumbnailUrl]
+      : [];
 }
 
 async function syncSpecies(
@@ -117,10 +198,12 @@ async function syncSpecies(
     name: animal.attributes.name ?? 'Unknown',
     species: ourSpecies,
     breed: animal.attributes.breedPrimary ?? null,
-    age_years: mapAgeYears(animal.attributes.ageGroup),
+    age_years: parseAgeYears(animal.attributes.ageString, animal.attributes.ageGroup),
     size: mapSize(animal.attributes.sizeGroup),
-    photos: animal.attributes.pictureThumbnailUrl ? [animal.attributes.pictureThumbnailUrl] : [],
-    description: animal.attributes.descriptionText ?? null,
+    photos: findPhotoUrls(animal, included),
+    description: animal.attributes.descriptionText
+      ? decodeHtmlEntities(animal.attributes.descriptionText)
+      : null,
     source_provider: 'rescuegroups',
     source_listing_id: animal.id,
     status: 'available' as const,
