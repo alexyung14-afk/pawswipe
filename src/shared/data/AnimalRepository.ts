@@ -62,3 +62,17 @@ export async function fetchSwipeDeck(
   }
   return { animals: data ?? [], error: null };
 }
+
+/**
+ * A single animal by id, for opening a shared deep link straight to its profile.
+ */
+export async function fetchAnimalById(
+  animalId: string
+): Promise<{ animal: Animal | null; error: AnimalRepositoryError | null }> {
+  const { data, error } = await supabase.from('animals').select('*').eq('id', animalId).maybeSingle();
+
+  if (error) {
+    return { animal: null, error: { message: error.message } };
+  }
+  return { animal: data, error: null };
+}

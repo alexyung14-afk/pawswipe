@@ -7,6 +7,8 @@ import { SwipeDeckScreen } from './src/features/swiping/SwipeDeckScreen';
 import { LikesScreen } from './src/features/swiping/LikesScreen';
 import { ProfileScreen } from './src/features/profile/ProfileScreen';
 import { ApplicationsScreen } from './src/features/applications/ApplicationsScreen';
+import { SharedAnimalScreen } from './src/features/swiping/SharedAnimalScreen';
+import { useIncomingAnimalLink } from './src/features/swiping/useIncomingAnimalLink';
 
 type Tab = 'find' | 'likes' | 'applications' | 'profile';
 
@@ -46,6 +48,7 @@ function SignedInApp() {
 
 function Root() {
   const { session, loading } = useAuth();
+  const { pending, clearPending } = useIncomingAnimalLink();
 
   if (loading) {
     return (
@@ -57,7 +60,13 @@ function Root() {
 
   return (
     <>
-      {session ? <SignedInApp /> : <SignInScreen />}
+      {session && pending ? (
+        <SharedAnimalScreen animalId={pending.animalId} onClose={clearPending} />
+      ) : session ? (
+        <SignedInApp />
+      ) : (
+        <SignInScreen />
+      )}
       <StatusBar style="auto" />
     </>
   );

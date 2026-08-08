@@ -2,6 +2,9 @@
 
 *Swipe to like. Tap to apply. No more 8-page forms for a dog you've already lost interest in by the time you finish page 3.*
 
+> **Starting a new session?** This is the spec. For current build status, what's done, what's
+> pending, and how to resume, read `docs/PROGRESS.md` first.
+
 ---
 
 ## 1. The Problem
@@ -181,6 +184,8 @@ flowchart LR
 ```
 
 **Type:** signal/content hybrid — cute, specific dogs are inherently shareable, and the share link drops a new person straight into the core experience. **Track:** the share of new signups that arrive via a shared dog link (a `?ref=` style parameter on every share).
+
+> **Sharing note (added after V1 build started):** the share sheet, the `pawswipe://animal/{id}` deep link, and referral tracking are built. The one part that can't work yet is a stranger with no app installed clicking the link and landing in an installed app — that needs Universal Links/App Links, which require a published App/Play Store listing and a verified domain (Phase 10). Today the link opens the app for anyone who already has it installed (e.g. beta testers); the full loop completes once the app ships.
 
 ## 16. Things to Handle Before Launch
 

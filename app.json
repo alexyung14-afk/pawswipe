@@ -3,6 +3,7 @@
     "name": "pawswipe",
     "slug": "pawswipe",
     "version": "1.0.0",
+    "scheme": "pawswipe",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

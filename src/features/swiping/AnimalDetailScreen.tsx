@@ -15,6 +15,7 @@ import {
   retryApplication,
   submitApplication,
 } from '../applications/applicationsRepository';
+import { shareAnimal } from './shareAnimal';
 
 function ApplyStatus({ application }: { application: Application }) {
   if (application.status === 'submitted') {
@@ -33,6 +34,7 @@ export function AnimalDetailScreen({ animal, onClose }: { animal: Animal; onClos
   const [application, setApplication] = useState<Application | null>(null);
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
+  const [shareMessage, setShareMessage] = useState<string | null>(null);
 
   const loadStatus = useCallback(async () => {
     if (!user) return;
@@ -74,13 +76,30 @@ export function AnimalDetailScreen({ animal, onClose }: { animal: Animal; onClos
     }
   };
 
+  const handleShare = async () => {
+    if (!user) return;
+    setShareMessage(null);
+    const result = await shareAnimal(animal, user.id);
+    if (result === 'copied') {
+      setShareMessage('Link copied to clipboard!');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={onClose} accessibilityLabel="Back">
           <Text style={styles.backText}>‹ Back</Text>
         </Pressable>
+        <Pressable onPress={handleShare} accessibilityLabel="Share this pet">
+          <Text style={styles.shareText}>Share</Text>
+        </Pressable>
       </View>
+      {shareMessage ? (
+        <Pressable onPress={() => setShareMessage(null)}>
+          <Text style={styles.shareToast}>{shareMessage}</Text>
+        </Pressable>
+      ) : null}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {animal.photos.length > 0 ? (
           animal.photos.map((uri, i) => (
@@ -145,6 +164,9 @@ export function AnimalDetailScreen({ animal, onClose }: { animal: Animal; onClos
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
@@ -152,6 +174,14 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
   backText: { color: '#ff7a59', fontWeight: '600', fontSize: 16 },
+  shareText: { color: '#ff7a59', fontWeight: '600', fontSize: 16 },
+  shareToast: {
+    backgroundColor: '#eafaf1',
+    color: '#27ae60',
+    textAlign: 'center',
+    padding: 10,
+    fontWeight: '600',
+  },
   scrollContent: { paddingBottom: 32 },
   photo: {
     width: '100%',

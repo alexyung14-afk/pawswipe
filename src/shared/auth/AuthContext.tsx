@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../db/supabaseClient';
+import { getPendingReferral } from '../referral/pendingReferral';
 
 interface AuthContextValue {
   session: Session | null;
@@ -31,7 +32,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp: AuthContextValue['signUp'] = async (email, password) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    // Passed as signup metadata rather than written directly: email confirmation means
+    // there's no authenticated session yet when this resolves, so a client-side insert
+    // into referrals would be blocked by RLS. A database trigger records it instead,
+    // reading this metadata off the new auth.users row (see migration 0012).
+    const pending = await getPendingReferral();
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: pending
+        ? {
+            data: {
+              referral_animal_id: pending.animalId,
+              referral_referrer_id: pending.ref ?? undefined,
+            },
+          }
+        : undefined,
+    });
+
     return { error: error ? error.message : null };
   };
 
