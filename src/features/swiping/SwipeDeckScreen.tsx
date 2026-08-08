@@ -9,7 +9,7 @@ import { addToLikes } from './likesRepository';
 import { AnimalDetailScreen } from './AnimalDetailScreen';
 
 export function SwipeDeckScreen() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,14 +59,9 @@ export function SwipeDeckScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Pawswipe</Text>
-        <View style={styles.headerActions}>
-          <Pressable onPress={() => setShowFilters((v) => !v)}>
-            <Text style={styles.filtersToggle}>{showFilters ? 'Hide Filters' : 'Filters'}</Text>
-          </Pressable>
-          <Pressable onPress={signOut}>
-            <Text style={styles.signOut}>Sign Out</Text>
-          </Pressable>
-        </View>
+        <Pressable onPress={() => setShowFilters((v) => !v)}>
+          <Text style={styles.filtersToggle}>{showFilters ? 'Hide Filters' : 'Filters'}</Text>
+        </Pressable>
       </View>
 
       {showFilters ? (
@@ -150,9 +145,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   headerTitle: { fontSize: 20, fontWeight: '700' },
-  headerActions: { flexDirection: 'row', gap: 16 },
   filtersToggle: { color: '#ff7a59', fontWeight: '600' },
-  signOut: { color: '#999', fontWeight: '600' },
   banner: { backgroundColor: '#fff3cd', padding: 12 },
   bannerText: { color: '#856404', textAlign: 'center' },
   deck: { flex: 1, padding: 16 },

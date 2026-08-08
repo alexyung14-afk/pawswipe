@@ -42,7 +42,12 @@ export interface Like {
   created_at: string;
 }
 
-export type ApplicationStatus = 'submitted' | 'no_response' | 'update_received';
+export type ApplicationStatus =
+  | 'pending'
+  | 'submitted'
+  | 'failed'
+  | 'no_response'
+  | 'update_received';
 
 export interface Application {
   id: string;

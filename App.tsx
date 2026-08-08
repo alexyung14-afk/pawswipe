@@ -5,8 +5,17 @@ import { AuthProvider, useAuth } from './src/shared/auth/AuthContext';
 import { SignInScreen } from './src/shared/auth/SignInScreen';
 import { SwipeDeckScreen } from './src/features/swiping/SwipeDeckScreen';
 import { LikesScreen } from './src/features/swiping/LikesScreen';
+import { ProfileScreen } from './src/features/profile/ProfileScreen';
+import { ApplicationsScreen } from './src/features/applications/ApplicationsScreen';
 
-type Tab = 'find' | 'likes';
+type Tab = 'find' | 'likes' | 'applications' | 'profile';
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'find', label: 'Find pets' },
+  { key: 'likes', label: 'Likes' },
+  { key: 'applications', label: 'Applications' },
+  { key: 'profile', label: 'Profile' },
+];
 
 function SignedInApp() {
   const [tab, setTab] = useState<Tab>('find');
@@ -14,15 +23,22 @@ function SignedInApp() {
   return (
     <View style={styles.appContainer}>
       <View style={styles.screenArea}>
-        {tab === 'find' ? <SwipeDeckScreen /> : <LikesScreen />}
+        {tab === 'find' ? (
+          <SwipeDeckScreen />
+        ) : tab === 'likes' ? (
+          <LikesScreen />
+        ) : tab === 'applications' ? (
+          <ApplicationsScreen />
+        ) : (
+          <ProfileScreen />
+        )}
       </View>
       <View style={styles.tabBar}>
-        <Pressable style={styles.tabButton} onPress={() => setTab('find')}>
-          <Text style={[styles.tabLabel, tab === 'find' && styles.tabLabelActive]}>Find pets</Text>
-        </Pressable>
-        <Pressable style={styles.tabButton} onPress={() => setTab('likes')}>
-          <Text style={[styles.tabLabel, tab === 'likes' && styles.tabLabelActive]}>Likes</Text>
-        </Pressable>
+        {TABS.map((t) => (
+          <Pressable key={t.key} style={styles.tabButton} onPress={() => setTab(t.key)}>
+            <Text style={[styles.tabLabel, tab === t.key && styles.tabLabelActive]}>{t.label}</Text>
+          </Pressable>
+        ))}
       </View>
     </View>
   );
