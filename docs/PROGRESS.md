@@ -5,8 +5,25 @@ doc — `docs/PLAN.md` is the spec, this is the status.
 
 ## Where things stand
 
-Phases 1–6 are complete, tested in-browser, and committed/pushed. Phase 7 (sharing) is now fully
-verified and code-complete, including a real bug found and fixed during verification:
+Phases 1–6 are complete, tested in-browser, and committed/pushed. Phase 7 (sharing) is fully
+verified and code-complete. Phase 8 (polish, error handling, edge cases — PLAN.md section 5's
+Rough Day Flow and Edge Cases) is in progress, going one item at a time, each verified in-browser
+before moving to the next:
+
+- **Done: account deletion (edge case E).** New `supabase/functions/delete-account/index.ts`
+  Edge Function (service-role, verifies the caller's own JWT first, calls
+  `auth.admin.deleteUser`) plus a "Delete Account" section in `ProfileScreen.tsx` with an inline
+  two-step confirm (not `Alert.alert` — react-native-web's Alert doesn't reliably render custom
+  buttons, same class of issue as the Share API note below). `adopter_profiles`, `likes`, and
+  `applications` all cascade-delete via their `auth.users(id) on delete cascade` foreign keys, so
+  no separate cleanup code was needed. Verified end-to-end with a disposable test account: deleted
+  via the real UI flow, confirmed zero rows left in `auth.users`/`applications`/`likes` after.
+- Remaining, in order: dog adopted mid-flow (A), duplicate-application warning (B), cached
+  listings on load failure (Rough Day 1), Apply auto-retry (Rough Day 2). Deferred: returning
+  after 3 months (C, lowest-confidence item, revisit later). Provider fallback (D) is N/A until
+  ShelterLuv (V2) exists.
+
+Phase 7 (sharing) verification notes, kept for reference:
 
 - Migration `supabase/migrations/0012_referral_trigger.sql` (referrals couldn't be inserted
   client-side because email confirmation means there's no authenticated session yet when `signUp()`
@@ -40,6 +57,11 @@ verify a domain in Resend, update `FROM_ADDRESS` in that Edge Function.
   liked/applied to several animals (mix of seed-test and real RescueGroups data).
 - `pawswipe.test+referral1@gmail.com` / `TestPassword123!` — created to test referrals before the
   trigger fix, never confirmed via email. Harmless to leave or delete.
+- `pawswipe.test+referral2@gmail.com` / `TestPassword123!` — used to verify the Phase 7 referral
+  trigger. Still exists, unconfirmed beyond that one signup.
+- `pawswipe.test+referral3@gmail.com` — used to verify both the Phase 7 deep-link fix and the
+  Phase 8 account-deletion flow, then deleted via the real Delete Account UI as part of that
+  verification. **No longer exists** — confirmed zero rows in `auth.users`/`applications`/`likes`.
 
 ## Infrastructure reference
 - Supabase project ref: `acetieuvjywddymjoxgq` (URL/anon key in `.env`, gitignored)
@@ -49,6 +71,8 @@ verify a domain in Resend, update `FROM_ADDRESS` in that Edge Function.
     pg_net, confirmed active).
   - `submit-application` — sends the one-tap Apply email via Resend. Runs as the calling user (RLS-
     scoped), not service role.
+  - `delete-account` — verifies the caller's own JWT, then uses the service role to call
+    `auth.admin.deleteUser`. Cascading FKs handle cleanup of dependent rows.
 - Secrets set (Supabase dashboard → Edge Functions → Manage secrets): `RESCUEGROUPS_API_KEY`,
   `RESEND_API_KEY`
 - External accounts live: RescueGroups.org (key active, self-serve approved), Resend (free tier,
@@ -62,14 +86,14 @@ verify a domain in Resend, update `FROM_ADDRESS` in that Edge Function.
   longer needed: `delete from animals where source_provider = 'seed-test';`
 
 ## What's next (per docs/PLAN.md section 19)
-1. Commit the `useIncomingAnimalLink.ts` fix above — Phase 7 is otherwise done.
-2. Phase 8: Polish, error handling, edge cases (the Rough Day / Edge Case flows in plan section 5 —
-   most sad-paths are already handled per-feature as they were built, but worth a dedicated pass).
-3. Phase 9: Pre-launch prep — legal pages, security pass, the three audits in plan section 17, and
+1. Phase 8, continued: dog adopted mid-flow (A) next, then duplicate-application warning (B),
+   cached listings on load failure (Rough Day 1), Apply auto-retry (Rough Day 2). See "Where
+   things stand" above for what's already done and why C/D aren't in this pass.
+2. Phase 9: Pre-launch prep — legal pages, security pass, the three audits in plan section 17, and
    the Resend domain gap above. Also worth revisiting: Supabase's built-in auth mailer is capped at
    2 emails/hour and can't be raised without custom SMTP — likely needs a custom SMTP provider (could
    reuse the existing Resend account) before real signups at any volume.
-4. Phase 10: Deployment (App Store / Play Store, waitlist invite from plan section 14).
+3. Phase 10: Deployment (App Store / Play Store, waitlist invite from plan section 14).
 
 ## Working notes for whoever continues this
 - The user runs all Supabase dashboard / SQL Editor / secret-setting steps themselves — paste exact

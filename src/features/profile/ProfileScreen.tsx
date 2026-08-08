@@ -39,11 +39,14 @@ function YesNoChips({
 }
 
 export function ProfileScreen() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, deleteAccount } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const [housingType, setHousingType] = useState<string | null>(null);
   const [hasYard, setHasYard] = useState<boolean | null>(null);
@@ -91,6 +94,19 @@ export function ProfileScreen() {
     setSaveMessage(
       saveError ? "Couldn't save. Check your connection and try again." : 'Saved!'
     );
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+    const { error: deleteAccountError } = await deleteAccount();
+    setDeleting(false);
+    if (deleteAccountError) {
+      setDeleteError("Couldn't delete your account. Check your connection and try again.");
+      return;
+    }
+    // On success, signOut() inside deleteAccount() clears the session and App.tsx
+    // routes back to the sign-in screen automatically.
   };
 
   if (loading) {
@@ -199,6 +215,45 @@ export function ProfileScreen() {
       <Pressable style={styles.signOutButton} onPress={signOut}>
         <Text style={styles.signOutText}>Sign Out</Text>
       </Pressable>
+
+      <View style={styles.dangerZone}>
+        {!confirmingDelete ? (
+          <Pressable style={styles.deleteButton} onPress={() => setConfirmingDelete(true)}>
+            <Text style={styles.deleteButtonText}>Delete Account</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.deleteConfirm}>
+            <Text style={styles.deleteConfirmText}>
+              This permanently deletes your account, profile, likes, and applications. This
+              can't be undone.
+            </Text>
+            {deleteError ? <Text style={styles.errorMessage}>{deleteError}</Text> : null}
+            <View style={styles.row}>
+              <Pressable
+                style={styles.deleteConfirmCancel}
+                onPress={() => {
+                  setConfirmingDelete(false);
+                  setDeleteError(null);
+                }}
+                disabled={deleting}
+              >
+                <Text style={styles.deleteConfirmCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.deleteConfirmButton, deleting && styles.saveButtonDisabled]}
+                onPress={handleDeleteAccount}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.deleteConfirmButtonText}>Yes, delete everything</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -251,4 +306,33 @@ const styles = StyleSheet.create({
   retryText: { color: '#fff', fontWeight: '600' },
   signOutButton: { marginTop: 24, alignItems: 'center', paddingVertical: 12 },
   signOutText: { color: '#999', fontWeight: '600' },
+  dangerZone: { marginTop: 24, borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 24 },
+  deleteButton: { alignItems: 'center', paddingVertical: 12 },
+  deleteButtonText: { color: '#c0392b', fontWeight: '600' },
+  deleteConfirm: {
+    borderWidth: 1,
+    borderColor: '#f5c6cb',
+    backgroundColor: '#fdf2f2',
+    borderRadius: 8,
+    padding: 16,
+    gap: 12,
+  },
+  deleteConfirmText: { color: '#721c24' },
+  deleteConfirmCancel: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  deleteConfirmCancelText: { color: '#333', fontWeight: '600' },
+  deleteConfirmButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: '#c0392b',
+  },
+  deleteConfirmButtonText: { color: '#fff', fontWeight: '600' },
 });
