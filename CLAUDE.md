@@ -17,3 +17,6 @@ known gaps, and how to resume: `docs/PROGRESS.md` — read it first.**
 - `src/shared/auth` — sign-in and session
 - `src/shared/referral` — pending-referral persistence + the growth-loop tracking hook into signup
 - `src/shared/components` — UI shared across features
+- `supabase/functions` — Edge Functions (`sync-animals`, `submit-application`, `delete-account`),
+  deployed via the Supabase dashboard, not the CLI (see PROGRESS.md working notes)
+- `supabase/migrations` — schema, applied via the SQL Editor the same way
