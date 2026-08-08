@@ -52,7 +52,13 @@ export function SwipeDeckScreen() {
   const currentAnimal = animals[0];
 
   if (viewingAnimal) {
-    return <AnimalDetailScreen animal={viewingAnimal} onClose={() => setViewingAnimal(null)} />;
+    return (
+      <AnimalDetailScreen
+        animal={viewingAnimal}
+        onClose={() => setViewingAnimal(null)}
+        onSelectAnimal={setViewingAnimal}
+      />
+    );
   }
 
   return (

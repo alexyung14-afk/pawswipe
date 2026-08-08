@@ -38,7 +38,13 @@ export function LikesScreen() {
   };
 
   if (viewingAnimal) {
-    return <AnimalDetailScreen animal={viewingAnimal} onClose={() => setViewingAnimal(null)} />;
+    return (
+      <AnimalDetailScreen
+        animal={viewingAnimal}
+        onClose={() => setViewingAnimal(null)}
+        onSelectAnimal={setViewingAnimal}
+      />
+    );
   }
 
   return (

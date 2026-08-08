@@ -15,7 +15,9 @@ import {
   retryApplication,
   submitApplication,
 } from '../applications/applicationsRepository';
+import { fetchAnimalById, fetchSimilarAnimals } from '../../shared/data/AnimalRepository';
 import { shareAnimal } from './shareAnimal';
+import { AnimalCard } from './components/AnimalCard';
 
 function ApplyStatus({ application }: { application: Application }) {
   if (application.status === 'submitted') {
@@ -28,17 +30,47 @@ function ApplyStatus({ application }: { application: Application }) {
   return null;
 }
 
-export function AnimalDetailScreen({ animal, onClose }: { animal: Animal; onClose: () => void }) {
+export function AnimalDetailScreen({
+  animal,
+  onClose,
+  onSelectAnimal,
+}: {
+  animal: Animal;
+  onClose: () => void;
+  onSelectAnimal?: (animal: Animal) => void;
+}) {
   const { user } = useAuth();
   const [checking, setChecking] = useState(true);
   const [application, setApplication] = useState<Application | null>(null);
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
+  const [similarAnimals, setSimilarAnimals] = useState<Animal[]>([]);
 
   const loadStatus = useCallback(async () => {
     if (!user) return;
     setChecking(true);
+    // Reset per-animal state -- this component doesn't remount when onSelectAnimal swaps in
+    // a different animal (same instance, new props), so anything left over from the previous
+    // animal would otherwise leak into this one (e.g. showing "no longer available" for an
+    // animal that's actually fine, carried over from the last one that wasn't).
+    setUnavailable(false);
+    setSimilarAnimals([]);
+    setApplication(null);
+    setApplyError(null);
+
+    // Re-check against the live row rather than trusting the possibly-stale `animal` prop
+    // (it could have been adopted since the swipe deck/likes list was last loaded).
+    const { animal: fresh } = await fetchAnimalById(animal.id);
+    if (fresh && fresh.status !== 'available') {
+      setUnavailable(true);
+      const { animals: similar } = await fetchSimilarAnimals(fresh);
+      setSimilarAnimals(similar);
+      setChecking(false);
+      return;
+    }
+
     const { application: existing } = await findExistingApplication(user.id, animal.id);
     setApplication(existing);
     setChecking(false);
@@ -134,6 +166,29 @@ export function AnimalDetailScreen({ animal, onClose }: { animal: Animal; onClos
           <View style={styles.applySection}>
             {checking ? (
               <ActivityIndicator />
+            ) : unavailable ? (
+              <>
+                <View style={styles.unavailableBox}>
+                  <Text style={styles.unavailableTitle}>No longer available</Text>
+                  <Text style={styles.unavailableMessage}>
+                    {animal.name} has already been adopted or is no longer listed.
+                  </Text>
+                </View>
+                {similarAnimals.length > 0 ? (
+                  <View style={styles.similarSection}>
+                    <Text style={styles.similarLabel}>Similar pets you might like</Text>
+                    <View style={styles.similarList}>
+                      {similarAnimals.map((similar) => (
+                        <AnimalCard
+                          key={similar.id}
+                          animal={similar}
+                          onPress={onSelectAnimal ? () => onSelectAnimal(similar) : undefined}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
+              </>
             ) : application?.status === 'submitted' ? (
               <ApplyStatus application={application} />
             ) : (
@@ -208,4 +263,15 @@ const styles = StyleSheet.create({
   statusBox: { padding: 14, borderRadius: 8, alignItems: 'center' },
   statusSuccess: { backgroundColor: '#eafaf1' },
   statusSuccessText: { color: '#27ae60', fontWeight: '700' },
+  unavailableBox: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+  },
+  unavailableTitle: { fontSize: 16, fontWeight: '700', color: '#333' },
+  unavailableMessage: { color: '#666', marginTop: 4, textAlign: 'center' },
+  similarSection: { marginTop: 24 },
+  similarLabel: { fontWeight: '600', marginBottom: 12 },
+  similarList: { gap: 16 },
 });

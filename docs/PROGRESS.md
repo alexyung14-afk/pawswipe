@@ -18,10 +18,25 @@ before moving to the next:
   `applications` all cascade-delete via their `auth.users(id) on delete cascade` foreign keys, so
   no separate cleanup code was needed. Verified end-to-end with a disposable test account: deleted
   via the real UI flow, confirmed zero rows left in `auth.users`/`applications`/`likes` after.
-- Remaining, in order: dog adopted mid-flow (A), duplicate-application warning (B), cached
-  listings on load failure (Rough Day 1), Apply auto-retry (Rough Day 2). Deferred: returning
-  after 3 months (C, lowest-confidence item, revisit later). Provider fallback (D) is N/A until
-  ShelterLuv (V2) exists.
+- **Done: dog adopted mid-flow (edge case A).** `sync-animals/index.ts` now marks any
+  previously-`available` animal that drops out of the provider's current "available" results as
+  `adopted` (skipped entirely if a species sync returns zero rows, to avoid mass-marking on what's
+  more likely a transient provider hiccup than everyone-got-adopted). `AnimalDetailScreen.tsx`
+  re-fetches the live row on open instead of trusting the possibly-stale prop, and if the animal's
+  status isn't `available` it shows a "No longer available" message plus up to 4 similar
+  same-species animals (new `fetchSimilarAnimals` in `AnimalRepository.ts`), tappable via a new
+  `onSelectAnimal` prop wired from both `SwipeDeckScreen` and `LikesScreen`.
+  Found and fixed a real bug during verification: `AnimalDetailScreen` doesn't remount when
+  `onSelectAnimal` swaps in a different animal (same component instance, new props), so
+  `unavailable`/`similarAnimals`/`application`/`applyError` state leaked across animals — viewing
+  an available animal right after an unavailable one incorrectly showed "no longer available" too.
+  Fixed by resetting that state at the top of the load effect. Verified end-to-end: marked a real
+  listing adopted, confirmed the swipe deck excludes it and the detail screen shows the
+  unavailable state with real similar-species suggestions, then confirmed tapping through to an
+  available suggestion shows the normal Apply flow (this is what caught the state-leak bug).
+- Remaining, in order: duplicate-application warning (B), cached listings on load failure (Rough
+  Day 1), Apply auto-retry (Rough Day 2). Deferred: returning after 3 months (C, lowest-confidence
+  item, revisit later). Provider fallback (D) is N/A until ShelterLuv (V2) exists.
 
 Phase 7 (sharing) verification notes, kept for reference:
 
@@ -86,9 +101,9 @@ verify a domain in Resend, update `FROM_ADDRESS` in that Edge Function.
   longer needed: `delete from animals where source_provider = 'seed-test';`
 
 ## What's next (per docs/PLAN.md section 19)
-1. Phase 8, continued: dog adopted mid-flow (A) next, then duplicate-application warning (B),
-   cached listings on load failure (Rough Day 1), Apply auto-retry (Rough Day 2). See "Where
-   things stand" above for what's already done and why C/D aren't in this pass.
+1. Phase 8, continued: duplicate-application warning (B) next, then cached listings on load
+   failure (Rough Day 1), Apply auto-retry (Rough Day 2). See "Where things stand" above for
+   what's already done and why C/D aren't in this pass.
 2. Phase 9: Pre-launch prep — legal pages, security pass, the three audits in plan section 17, and
    the Resend domain gap above. Also worth revisiting: Supabase's built-in auth mailer is capped at
    2 emails/hour and can't be raised without custom SMTP — likely needs a custom SMTP provider (could

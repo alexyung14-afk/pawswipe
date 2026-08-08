@@ -211,6 +211,9 @@ async function syncSpecies(
   }));
 
   if (rows.length === 0) {
+    // Treated as a no-op rather than "everyone's adopted" -- an empty result is more likely
+    // a transient provider hiccup than every dog/cat of a species genuinely running out, and
+    // marking the whole species adopted on that guess would be worse than doing nothing.
     return { synced: 0, error: null };
   }
 
@@ -221,6 +224,24 @@ async function syncSpecies(
   if (error) {
     return { synced: 0, error: error.message };
   }
+
+  // Anything we'd previously synced for this species that's no longer in the provider's
+  // available results has been adopted, pulled, or otherwise removed (PLAN.md edge case:
+  // "dog gets adopted by someone else mid-flow"). Only rows still marked 'available' are
+  // touched, so this never overwrites an already-'pending'/'adopted' row with stale info.
+  const stillAvailableIds = rgData.data.map((animal) => `"${animal.id}"`).join(',');
+  const { error: staleError } = await supabase
+    .from('animals')
+    .update({ status: 'adopted' })
+    .eq('source_provider', 'rescuegroups')
+    .eq('species', ourSpecies)
+    .eq('status', 'available')
+    .not('source_listing_id', 'in', `(${stillAvailableIds})`);
+
+  if (staleError) {
+    return { synced: rows.length, error: `Synced but failed to mark stale listings: ${staleError.message}` };
+  }
+
   return { synced: rows.length, error: null };
 }
 

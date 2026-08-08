@@ -76,3 +76,26 @@ export async function fetchAnimalById(
   }
   return { animal: data, error: null };
 }
+
+/**
+ * A few other available animals of the same species, for "no longer available -- here's
+ * something similar" when the one the user was looking at got adopted.
+ */
+export async function fetchSimilarAnimals(
+  animal: Pick<Animal, 'id' | 'species'>,
+  limit = 4
+): Promise<{ animals: Animal[]; error: AnimalRepositoryError | null }> {
+  const { data, error } = await supabase
+    .from('animals')
+    .select('*')
+    .eq('species', animal.species)
+    .eq('status', 'available')
+    .neq('id', animal.id)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    return { animals: [], error: { message: error.message } };
+  }
+  return { animals: data ?? [], error: null };
+}
