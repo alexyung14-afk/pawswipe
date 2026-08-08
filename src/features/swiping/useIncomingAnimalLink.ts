@@ -9,11 +9,20 @@ import {
 
 function parseAnimalLink(url: string): PendingReferral | null {
   const parsed = Linking.parse(url);
-  const combinedPath = [parsed.hostname, parsed.path].filter(Boolean).join('/');
-  const match = combinedPath.match(/^animal\/([^/?]+)/);
-  if (!match) return null;
-  const ref = typeof parsed.queryParams?.ref === 'string' ? parsed.queryParams.ref : null;
-  return { animalId: match[1], ref };
+  // Native custom-scheme links (pawswipe://animal/123) parse with hostname="animal",
+  // path="123", so they need rejoining. Web links (http://host/animal/123) already have
+  // the full "animal/123" in path, and rejoining with hostname would break the match.
+  const candidates = [parsed.path, [parsed.hostname, parsed.path].filter(Boolean).join('/')].filter(
+    (value): value is string => Boolean(value)
+  );
+  for (const candidate of candidates) {
+    const match = candidate.match(/^animal\/([^/?]+)/);
+    if (match) {
+      const ref = typeof parsed.queryParams?.ref === 'string' ? parsed.queryParams.ref : null;
+      return { animalId: match[1], ref };
+    }
+  }
+  return null;
 }
 
 /**

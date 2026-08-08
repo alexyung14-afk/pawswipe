@@ -5,31 +5,26 @@ doc — `docs/PLAN.md` is the spec, this is the status.
 
 ## Where things stand
 
-Phases 1–6 are complete, tested in-browser, and committed/pushed. Phase 7 (sharing) is code-complete
-and about to be committed, but **one step is unverified**:
+Phases 1–6 are complete, tested in-browser, and committed/pushed. Phase 7 (sharing) is now fully
+verified and code-complete, including a real bug found and fixed during verification:
 
-- Migration `supabase/migrations/0012_referral_trigger.sql` was written to fix a real bug (referrals
-  couldn't be inserted client-side because email confirmation means there's no authenticated session
-  yet when `signUp()` resolves, so RLS blocked the insert — fixed by writing the referral via signup
-  metadata + a database trigger instead). The user was about to run it in the SQL Editor and hit
-  Supabase's "destructive operation" warning (expected — it touches the `auth` schema; the statement
-  itself is safe, it only adds a trigger, doesn't alter `auth.users`). **Confirm this migration
-  actually ran, then re-verify the referral flow** before considering Phase 7 done.
-
-### How to re-verify the referral flow
-1. Get a real animal id: `select id from animals limit 1;`
-2. Sign out of any test account in the app.
-3. In the browser console (web target): `localStorage.setItem('pawswipe.pendingSharedAnimal', JSON.stringify({animalId: '<id>', ref: '<some-existing-user-id>'}))`
-4. Sign up a brand-new test email (e.g. `pawswipe.test+referral2@gmail.com` / `TestPassword123!`).
-5. Verify with:
-   ```sql
-   select r.animal_id, r.referrer_user_id, a.name as animal_name, u.email as new_user_email
-   from referrals r
-   join auth.users u on u.id = r.referred_user_id
-   left join animals a on a.id = r.animal_id
-   where u.email = 'pawswipe.test+referral2@gmail.com';
-   ```
-   Should return one row. If it doesn't, the trigger migration didn't apply — re-run it.
+- Migration `supabase/migrations/0012_referral_trigger.sql` (referrals couldn't be inserted
+  client-side because email confirmation means there's no authenticated session yet when `signUp()`
+  resolves, so RLS blocked the insert — fixed by writing the referral via signup metadata + a
+  database trigger instead) is confirmed applied (`handle_new_user_referral` function and
+  `on_auth_user_created_referral` trigger both exist on `auth.users`).
+- Found and fixed a real bug in `src/features/swiping/useIncomingAnimalLink.ts`: `parseAnimalLink`
+  joined `[hostname, path]` before matching against `^animal\/...`, which only works for native
+  custom-scheme links (`pawswipe://animal/123`, where expo-linking puts `animal` in `hostname`). On
+  web, `hostname` is the real domain (`localhost`, etc.), so the joined string became
+  `localhost/animal/123` and never matched — shared links silently did nothing on the web target.
+  Fixed by trying `parsed.path` alone first, falling back to the hostname+path join for native links.
+- End-to-end verified: real deep link (`http://localhost:8081/animal/<id>?ref=<referrerId>`) → signup
+  → referral row written with the correct `animal_id` and `referrer_user_id`. Confirmed with a fresh
+  animal id per attempt to rule out stale cached data (an early verification attempt was a false
+  positive from AsyncStorage's web layer caching stale data from a prior real session, not from the
+  raw `localStorage.setItem` used to seed the test — that method doesn't reach the app's in-memory
+  AsyncStorage cache on web, so future manual tests should navigate to the real deep-link URL instead).
 
 ## Known pre-launch gap (important — belongs in Phase 9)
 
@@ -67,11 +62,13 @@ verify a domain in Resend, update `FROM_ADDRESS` in that Edge Function.
   longer needed: `delete from animals where source_provider = 'seed-test';`
 
 ## What's next (per docs/PLAN.md section 19)
-1. Finish verifying Phase 7 (referral flow above), commit any fixes.
+1. Commit the `useIncomingAnimalLink.ts` fix above — Phase 7 is otherwise done.
 2. Phase 8: Polish, error handling, edge cases (the Rough Day / Edge Case flows in plan section 5 —
    most sad-paths are already handled per-feature as they were built, but worth a dedicated pass).
 3. Phase 9: Pre-launch prep — legal pages, security pass, the three audits in plan section 17, and
-   the Resend domain gap above.
+   the Resend domain gap above. Also worth revisiting: Supabase's built-in auth mailer is capped at
+   2 emails/hour and can't be raised without custom SMTP — likely needs a custom SMTP provider (could
+   reuse the existing Resend account) before real signups at any volume.
 4. Phase 10: Deployment (App Store / Play Store, waitlist invite from plan section 14).
 
 ## Working notes for whoever continues this
